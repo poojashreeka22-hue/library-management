@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Library Management System</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+
+  <!-- ======================================================================
+       Left Sidebar Navigation (Matching Reference UI)
+       ====================================================================== -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <svg class="logo-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+      </svg>
+      <span class="logo-text">Library Management</span>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-item active" data-view="dashboard">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+        <span>Dashboard</span>
+      </div>
+
+      <div class="nav-section-title">Book Management</div>
+      <div class="nav-item" data-view="book-catalog">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+        <span>Book Catalog</span>
+      </div>
+      <div class="nav-item" data-view="book-copies">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+        <span>Book Copies & Inventory</span>
+      </div>
+      <div class="nav-item" data-view="categories-authors">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>
+        <span>Categories & Authors</span>
+      </div>
+
+      <div class="nav-section-title">Members & Loans</div>
+      <div class="nav-item" data-view="members">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+        <span>Members</span>
+      </div>
+      <div class="nav-item" data-view="issue-return">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+        <span>Book Issue & Return</span>
+      </div>
+      <div class="nav-item" data-view="reservations">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+        <span>Reservations</span>
+      </div>
+
+      <div class="nav-section-title">Transactions</div>
+      <div class="nav-item" data-view="active-loans">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+        <span>Active Loans</span>
+      </div>
+      <div class="nav-item" data-view="overdue-books">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+        <span>Overdue Books</span>
+      </div>
+      <div class="nav-item" data-view="fine-payments">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+        <span>Fine & Payments</span>
+      </div>
+      <div class="nav-item" data-view="borrowing-history">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <span>Borrowing History</span>
+      </div>
+      <div class="nav-item" data-view="renewals">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+        <span>Renewals</span>
+      </div>
+
+      <div class="nav-section-title">Administration</div>
+      <div class="nav-item" data-view="users-accounts">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+        <span>Librarians & User Accounts</span>
+      </div>
+      <div class="nav-item" data-view="roles-permissions">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+        <span>Roles & Permissions</span>
+      </div>
+      <div class="nav-item" data-view="reports-analytics">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+        <span>Reports & Analytics</span>
+      </div>
+      <div class="nav-item" data-view="audit-logs">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>
+        <span>Audit Logs</span>
+      </div>
+      <div class="nav-item" data-view="system-settings">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        <span>System Settings</span>
+      </div>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="nav-item" id="nav-auth-btn" onclick="handleAuthAction()">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+        <span id="auth-action-text">Sign In</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ======================================================================
+       Main App Layout
+       ====================================================================== -->
+  <main class="main-wrapper">
+    <!-- Top Header Bar -->
+    <header class="top-header">
+      <div class="search-box-wrapper">
+        <div class="search-box">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+          <input type="text" class="search-input" id="global-search" placeholder="Search books, members, or ISBN..." autocomplete="off">
+          <button type="button" id="search-clear-btn" class="search-clear-btn" title="Clear search" style="display:none;" onclick="clearGlobalSearch()">&times;</button>
+        </div>
+        <div id="global-search-dropdown" class="search-results-dropdown" style="display:none;"></div>
+      </div>
+
+      <div class="header-right">
+        <button class="notification-btn" title="Notifications">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+          <span class="notification-badge">2</span>
+        </button>
+
+        <div class="user-profile">
+          <div class="avatar-circle">A</div>
+          <div class="user-info">
+            <span class="user-name">Admin</span>
+            <span class="user-role">Librarian</span>
+          </div>
+          <svg style="width:16px;height:16px;color:#94a3b8;" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content Canvas -->
+    <div class="content-canvas">
+
+      <!-- ================================================================
+           VIEW: DASHBOARD (Matches Reference Image)
+           ================================================================ -->
+      <section id="view-dashboard">
+        <!-- Banner -->
+        <div class="page-banner">
+          <div>
+            <h1 class="page-title">Dashboard</h1>
+            <p class="page-subtitle">Welcome back, Admin! Here's what's happening in the library.</p>
+          </div>
+          <div class="date-badge">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+            <span id="current-date-time">Apr 26, 2025 10:24 AM</span>
+          </div>
+        </div>
+
+        <!-- 5 Top Metric Stat Cards -->
+        <div class="stats-grid">
+          <!-- 1. Total Books -->
+          <div class="stat-card blue">
+            <div class="stat-icon">
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+            </div>
+            <div class="stat-details">
+              <span class="stat-title">Total Books</span>
+              <span class="stat-value" id="stat-total-books">0</span>
+              <span class="stat-subtitle">Titles in catalog</span>
+            </div>
+          </div>
+
+          <!-- 2. Total Copies -->
+          <div class="stat-card green">
+            <div class="stat-icon">
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+            </div>
+            <div class="stat-details">
+              <span class="stat-title">Total Copies</span>
+              <span class="stat-value" id="stat-total-copies">0</span>
+              <span class="stat-subtitle">Physical copies</span>
+            </div>
+          </div>
+
+          <!-- 3. Active Members -->
+          <div class="stat-card purple">
+            <div class="stat-icon">
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+            </div>
+            <div class="stat-details">
+              <span class="stat-title">Active Members</span>
+              <span class="stat-value" id="stat-active-members">0</span>
+              <span class="stat-subtitle">Registered members</span>
+            </div>
+          </div>
+
+          <!-- 4. Current Loans -->
+          <div class="stat-card orange">
+            <div class="stat-icon">
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+            </div>
+            <div class="stat-details">
+              <span class="stat-title">Current Loans</span>
+              <span class="stat-value" id="stat-current-loans">0</span>
+              <span class="stat-subtitle">Books currently issued</span>
+            </div>
+          </div>
+
+          <!-- 5. Overdue Books -->
+          <div class="stat-card red">
+            <div class="stat-icon">
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+            </div>
+            <div class="stat-details">
+              <span class="stat-title">Overdue Books</span>
+              <span class="stat-value" id="stat-overdue-books">0</span>
+              <span class="stat-subtitle">Require attention</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2x2 Grid: Recent Books, Active Loans, Overdue Books, Quick Actions -->
+        <div class="dashboard-grid">
+          <!-- Recent Books Table -->
+          <div class="grid-card">
+            <div class="card-header-row">
+              <h2 class="card-title">Recent Books</h2>
+              <a class="view-all-link" onclick="switchView('book-catalog')">View All</a>
+            </div>
+            <div class="table-wrapper">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Title</th>
+                    <th>Author</th>
+                    <th>Category</th>
+                    <th>Copies</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="recent-books-tbody">
+                  <!-- Dynamic Rows -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Active Loans Table -->
+          <div class="grid-card">
+            <div class="card-header-row">
+              <h2 class="card-title">Active Loans</h2>
+              <a class="view-all-link" onclick="switchView('active-loans')">View All</a>
+            </div>
+            <div class="table-wrapper">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Member Name</th>
+                    <th>Book Title</th>
+                    <th>Issue Date</th>
+                    <th>Due Date</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="active-loans-tbody">
+                  <!-- Dynamic Rows -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Overdue Books Table -->
+          <div class="grid-card">
+            <div class="card-header-row">
+              <h2 class="card-title">Overdue Books</h2>
+              <a class="view-all-link" onclick="switchView('overdue-books')">View All</a>
+            </div>
+            <div class="table-wrapper">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Member Name</th>
+                    <th>Book Title</th>
+                    <th>Days Overdue</th>
+                    <th>Fine (₹)</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="overdue-books-tbody">
+                  <!-- Dynamic Rows -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Quick Actions Grid (6 Tiles matching reference) -->
+          <div class="grid-card">
+            <div class="card-header-row">
+              <h2 class="card-title">Quick Actions</h2>
+            </div>
+            <div class="quick-actions-grid">
+              <!-- Tile 1: Add Book -->
+              <div class="action-tile tile-book" onclick="openModal('modal-add-book')">
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+                <span class="action-title">Add Book</span>
+                <span class="action-desc">Create new book entry</span>
+              </div>
+
+              <!-- Tile 2: Add Member -->
+              <div class="action-tile tile-member" onclick="openModal('modal-add-member')">
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg>
+                <span class="action-title">Add Member</span>
+                <span class="action-desc">Register new member</span>
+              </div>
+
+              <!-- Tile 3: Issue Book -->
+              <div class="action-tile tile-issue" onclick="openModal('modal-issue-book')">
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+                <span class="action-title">Issue Book</span>
+                <span class="action-desc">Issue to a member</span>
+              </div>
+
+              <!-- Tile 4: Return Book -->
+              <div class="action-tile tile-return" onclick="openModal('modal-return-book')">
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                <span class="action-title">Return Book</span>
+                <span class="action-desc">Process book return</span>
+              </div>
+
+              <!-- Tile 5: Add Copy -->
+              <div class="action-tile tile-copy" onclick="openModal('modal-add-copy')">
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                <span class="action-title">Add Copy</span>
+                <span class="action-desc">Add physical copy</span>
+              </div>
+
+              <!-- Tile 6: Make Payment -->
+              <div class="action-tile tile-payment" onclick="openModal('modal-make-payment')">
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                <span class="action-title">Make Payment</span>
+                <span class="action-desc">Record fine/payment</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================================================================
+           DYNAMIC SUB-VIEWS CONTAINER (Catalog, Members, Fines, etc.)
+           ================================================================ -->
+      <section id="view-dynamic" style="display:none;">
+        <div id="dynamic-content"></div>
+      </section>
+    </div>
+  </main>
+
+  <!-- ======================================================================
+       INTERACTIVE MODALS
+       ====================================================================== -->
+
+  <!-- Modal 1: Add Book -->
+  <div class="modal-backdrop" id="modal-add-book">
+    <div class="modal-card modal-card-lg">
+      <div class="modal-header">
+        <div>
+          <h3 class="modal-title">Create New Book Entry</h3>
+          <p class="modal-subtitle">Add catalog metadata, select multiple authors/categories, or drag & drop files.</p>
+        </div>
+        <button class="close-btn" onclick="closeModal('modal-add-book')">&times;</button>
+      </div>
+      <form id="form-add-book" onsubmit="handleAddBook(event)" novalidate>
+        <div class="modal-body">
+          <!-- Inline Form Error / Success Alert -->
+          <div id="add-book-alert" class="form-alert" style="display:none;"></div>
+
+          <div class="form-group">
+            <label class="form-label">Book Title <span class="req">*</span></label>
+            <input type="text" id="add-book-title" name="title" class="form-control" required placeholder="e.g. Design Patterns: Elements of Reusable Object-Oriented Software">
+            <div class="field-error" id="title-error"></div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">ISBN (10 or 13 digits)</label>
+              <input type="text" id="add-book-isbn" name="isbn" class="form-control" placeholder="9780201633610 or 0201633612">
+              <div class="field-error" id="isbn-error"></div>
+              <span class="form-hint">Hyphens or spaces are accepted and normalized automatically.</span>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Published Year</label>
+              <input type="number" id="add-book-year" name="published_year" class="form-control" placeholder="1994" min="1000" max="2100">
+              <div class="field-error" id="year-error"></div>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Publisher</label>
+              <input type="text" name="publisher" class="form-control" placeholder="Addison-Wesley">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Language</label>
+              <input type="text" name="language" class="form-control" value="English">
+            </div>
+          </div>
+
+          <!-- Multi-Item Selection: Authors -->
+          <div class="form-group">
+            <div class="section-label-row">
+              <label class="form-label">Authors <span class="req">*</span></label>
+              <button type="button" class="btn-link-action" onclick="toggleQuickAddAuthor()">+ Quick Add New Author</button>
+            </div>
+            <!-- Quick Add Author Input (Initially Hidden) -->
+            <div id="quick-add-author-panel" class="quick-add-panel" style="display:none;">
+              <input type="text" id="quick-author-name" class="form-control form-control-sm" placeholder="Enter new author name">
+              <button type="button" class="btn btn-secondary btn-sm" onclick="saveQuickAuthor()">Add Author</button>
+            </div>
+            <!-- Selected Authors Tag Chips -->
+            <div class="multi-select-container">
+              <div id="selected-authors-chips" class="selected-chips-box">
+                <span class="placeholder-chip">Click authors below to select...</span>
+              </div>
+            </div>
+            <!-- Available Authors Pill Cloud -->
+            <div class="pill-cloud-wrapper">
+              <span class="cloud-title">Available Authors (click to toggle):</span>
+              <div id="author-pill-cloud" class="pill-cloud"></div>
+            </div>
+            <div class="field-error" id="author-error"></div>
+          </div>
+
+          <!-- Multi-Item Selection: Categories -->
+          <div class="form-group">
+            <div class="section-label-row">
+              <label class="form-label">Categories <span class="req">*</span></label>
+              <button type="button" class="btn-link-action" onclick="toggleQuickAddCategory()">+ Quick Add New Category</button>
+            </div>
+            <!-- Quick Add Category Input (Initially Hidden) -->
+            <div id="quick-add-category-panel" class="quick-add-panel" style="display:none;">
+              <input type="text" id="quick-category-name" class="form-control form-control-sm" placeholder="Enter new category name">
+              <button type="button" class="btn btn-secondary btn-sm" onclick="saveQuickCategory()">Add Category</button>
+            </div>
+            <!-- Selected Categories Tag Chips -->
+            <div class="multi-select-container">
+              <div id="selected-categories-chips" class="selected-chips-box">
+                <span class="placeholder-chip">Click categories below to select...</span>
+              </div>
+            </div>
+            <!-- Available Categories Pill Cloud -->
+            <div class="pill-cloud-wrapper">
+              <span class="cloud-title">Available Categories (click to toggle):</span>
+              <div id="category-pill-cloud" class="pill-cloud"></div>
+            </div>
+            <div class="field-error" id="category-error"></div>
+          </div>
+
+          <!-- Drag and Drop File Upload Area -->
+          <div class="form-group">
+            <label class="form-label">Cover Image / File Attachments (Drag & Drop or Select Multiple)</label>
+            <div class="dropzone" id="book-dropzone" onclick="document.getElementById('book-file-input').click()">
+              <svg class="dropzone-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+              </svg>
+              <div class="dropzone-text">
+                <strong>Drag and drop files here</strong>, or <span class="browse-link">browse from your computer</span>
+              </div>
+              <div class="dropzone-hint">Supports cover images (PNG, JPG, WebP) and documents. Multiple files supported.</div>
+              <input type="file" id="book-file-input" multiple accept="image/*,.pdf,.csv,.json" style="display:none;" onchange="handleFileSelect(event)">
+            </div>
+            <!-- Uploaded Files Preview List -->
+            <div id="book-uploaded-files-list" class="uploaded-files-list"></div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-add-book')">Cancel</button>
+          <button type="submit" id="btn-save-book" class="btn btn-primary">Save Book Entry</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 1.5: Batch Import Books (Drag & Drop CSV / JSON) -->
+  <div class="modal-backdrop" id="modal-batch-import">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div>
+          <h3 class="modal-title">Batch Import Books</h3>
+          <p class="modal-subtitle">Drag and drop a CSV or JSON file containing multiple books.</p>
+        </div>
+        <button class="close-btn" onclick="closeModal('modal-batch-import')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="batch-import-alert" class="form-alert" style="display:none;"></div>
+        <div class="dropzone" id="batch-import-dropzone" onclick="document.getElementById('batch-file-input').click()">
+          <svg class="dropzone-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+          <div class="dropzone-text">
+            <strong>Drag and drop CSV or JSON catalog file here</strong>, or <span class="browse-link">browse</span>
+          </div>
+          <div class="dropzone-hint">Expected columns in CSV: title, isbn, authors, categories, publisher, year, copies</div>
+          <input type="file" id="batch-file-input" accept=".csv,.json" style="display:none;" onchange="handleBatchFileSelect(event)">
+        </div>
+        <div id="batch-file-info" style="margin-top:12px;"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('modal-batch-import')">Cancel</button>
+        <button type="button" id="btn-run-batch-import" class="btn btn-primary" onclick="submitBatchImport()" disabled>Start Import</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 2: Add Member -->
+  <div class="modal-backdrop" id="modal-add-member">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">Register New Member</h3>
+        <button class="close-btn" onclick="closeModal('modal-add-member')">&times;</button>
+      </div>
+      <form onsubmit="handleAddMember(event)">
+        <div class="modal-body">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">First Name <span class="req">*</span></label>
+              <input type="text" name="first_name" class="form-control" required placeholder="John">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Last Name <span class="req">*</span></label>
+              <input type="text" name="last_name" class="form-control" required placeholder="Doe">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Email Address <span class="req">*</span></label>
+            <input type="email" name="email" class="form-control" required placeholder="john.doe@example.com">
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Phone</label>
+              <input type="text" name="phone" class="form-control" placeholder="+91 9876543210">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Membership Type</label>
+              <select name="membership_type" class="form-control">
+                <option value="standard">Standard (5 books max)</option>
+                <option value="premium">Premium (10 books max)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-add-member')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Register Member</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 3: Issue Book -->
+  <div class="modal-backdrop" id="modal-issue-book">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">Issue Book Copy to Member</h3>
+        <button class="close-btn" onclick="closeModal('modal-issue-book')">&times;</button>
+      </div>
+      <form id="form-issue-book" onsubmit="handleIssueSubmit(event, 'form-issue-book')">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Select Eligible Member <span class="req">*</span></label>
+            <select name="member_id" id="issue-member-select" class="form-control" required></select>
+            <span class="form-hint">Only active members without overdue/fine locks appear here.</span>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Select Available Physical Copy <span class="req">*</span></label>
+            <select name="book_copy_id" id="issue-copy-select" class="form-control" required></select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-issue-book')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Issue Book</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 4: Return Book -->
+  <div class="modal-backdrop" id="modal-return-book">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">Process Book Return</h3>
+        <button class="close-btn" onclick="closeModal('modal-return-book')">&times;</button>
+      </div>
+      <form id="form-return-book" onsubmit="handleReturnSubmit(event, 'form-return-book')">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Select Active Loan <span class="req">*</span></label>
+            <select name="loan_id" id="return-loan-select" class="form-control" required></select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Returned Copy Condition</label>
+            <select name="copy_status" class="form-control">
+              <option value="Available">Available (Good Condition)</option>
+              <option value="Damaged">Damaged</option>
+              <option value="Under Maintenance">Under Maintenance</option>
+              <option value="Lost">Lost</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-return-book')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Confirm Return</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 5: Add Copy -->
+  <div class="modal-backdrop" id="modal-add-copy">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">Add Physical Copy</h3>
+        <button class="close-btn" onclick="closeModal('modal-add-copy')">&times;</button>
+      </div>
+      <form onsubmit="handleAddCopy(event)">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Book Title <span class="req">*</span></label>
+            <select name="book_id" id="copy-book-select" class="form-control" required></select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Unique Barcode / Identifier <span class="req">*</span></label>
+            <input type="text" name="barcode" class="form-control" required placeholder="e.g. BC-CLE-001-09">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Condition Notes</label>
+            <input type="text" name="condition_notes" class="form-control" placeholder="Brand new hardcover">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-add-copy')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Physical Copy</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 6: Make Payment -->
+  <div class="modal-backdrop" id="modal-make-payment">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">Record Fine Payment</h3>
+        <button class="close-btn" onclick="closeModal('modal-make-payment')">&times;</button>
+      </div>
+      <form onsubmit="handleMakePayment(event)">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Select Unpaid Fine <span class="req">*</span></label>
+            <select name="fine_id" id="payment-fine-select" class="form-control" required></select>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Amount (₹) <span class="req">*</span></label>
+              <input type="number" step="0.01" name="amount" class="form-control" required placeholder="0.00">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Payment Method</label>
+              <select name="payment_method" class="form-control">
+                <option value="Cash">Cash</option>
+                <option value="Card">Card</option>
+                <option value="Online">Online / UPI</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-make-payment')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Record Payment</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 7: Add Reservation -->
+  <div class="modal-backdrop" id="modal-add-reservation">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">Place Book Reservation</h3>
+        <button class="close-btn" onclick="closeModal('modal-add-reservation')">&times;</button>
+      </div>
+      <form onsubmit="handleAddReservation(event)">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Book Title <span class="req">*</span></label>
+            <select name="book_id" id="reserve-book-select" class="form-control" required></select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Member <span class="req">*</span></label>
+            <select name="member_id" id="reserve-member-select" class="form-control" required></select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-add-reservation')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Place Reservation</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 0: Staff Login -->
+  <div class="modal-backdrop" id="modal-login">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">Staff Authentication</h3>
+        <button class="close-btn" onclick="closeModal('modal-login')">&times;</button>
+      </div>
+      <form id="form-staff-login" onsubmit="handleLoginSubmit(event)">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Username <span class="req">*</span></label>
+            <input type="text" name="username" class="form-control" required placeholder="e.g. admin" autocomplete="username">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Password <span class="req">*</span></label>
+            <input type="password" name="password" class="form-control" required placeholder="Enter password" autocomplete="current-password">
+          </div>
+          <p class="form-hint" style="margin-top:10px;">Configured development credentials: <strong>admin</strong> / <strong>admin123</strong></p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-login')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Sign In</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- App Script -->
+  <script src="/static/js/app.js"></script>
+</body>
+</html>
