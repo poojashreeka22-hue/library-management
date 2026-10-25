@@ -232,6 +232,8 @@ def create_book(
             cover_image=payload.cover_image,
             author_ids=payload.author_ids,
             category_ids=payload.category_ids,
+            initial_copies=payload.initial_copies if payload.initial_copies is not None else 0,
+            barcode_prefix=payload.barcode_prefix,
         )
         services.create_audit_log(
             db, current_user.id, "CREATE_BOOK", "Book", book.id, f"Created book '{book.title}' (ISBN: {book.isbn})"

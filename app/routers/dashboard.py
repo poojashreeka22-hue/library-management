@@ -37,6 +37,12 @@ def get_stats_only(db: Session = Depends(get_db)):
     return DashboardStats(**stats)
 
 
+@router.get("/notifications")
+def get_dashboard_notifications(db: Session = Depends(get_db)):
+    """Retrieve real-time actionable notifications and system alerts."""
+    return services.get_notifications(db)
+
+
 @router.get("/reports")
 def get_full_reports(
     current_user: User = Depends(require_role(UserRole.admin, UserRole.librarian)),
@@ -58,16 +64,18 @@ def get_system_settings(db: Session = Depends(get_db)):
         "reservation_expiry_days": config.RESERVATION_EXPIRY_DAYS,
         "max_active_reservations": config.MAX_ACTIVE_RESERVATIONS,
         "max_unpaid_fine_limit": config.MAX_UNPAID_FINE_LIMIT,
+        "lost_book_price": config.LOST_BOOK_PRICE,
+        "damaged_book_price": config.DAMAGED_BOOK_PRICE,
     }
 
 
 @router.put("/settings")
 def update_system_settings(
     payload: dict,
-    current_user: User = Depends(require_role(UserRole.admin)),
+    current_user: User = Depends(require_role(UserRole.admin, UserRole.librarian)),
     db: Session = Depends(get_db),
 ):
-    """Admin-only: update runtime system settings."""
+    """Staff: update runtime system settings including dues prices and lost book prices."""
     if "default_loan_days" in payload:
         config.DEFAULT_LOAN_DAYS = int(payload["default_loan_days"])
     if "max_renewals" in payload:
@@ -84,10 +92,14 @@ def update_system_settings(
         config.MAX_ACTIVE_RESERVATIONS = int(payload["max_active_reservations"])
     if "max_unpaid_fine_limit" in payload:
         config.MAX_UNPAID_FINE_LIMIT = float(payload["max_unpaid_fine_limit"])
+    if "lost_book_price" in payload:
+        config.LOST_BOOK_PRICE = float(payload["lost_book_price"])
+    if "damaged_book_price" in payload:
+        config.DAMAGED_BOOK_PRICE = float(payload["damaged_book_price"])
 
     services.create_audit_log(
         db, current_user.id, "UPDATE_SETTINGS", "System", None,
-        f"Updated system settings: {payload}"
+        f"Updated system settings: dues rate ₹{config.FINE_PER_DAY}/day, lost price ₹{config.LOST_BOOK_PRICE}"
     )
     db.commit()
     return get_system_settings(db)

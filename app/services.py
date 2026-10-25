@@ -257,8 +257,10 @@ def create_book(db: Session, title: str, isbn: Optional[str] = None,
                 page_count: Optional[int] = None,
                 cover_image: Optional[str] = None,
                 author_ids: List[int] = None,
-                category_ids: List[int] = None) -> Book:
-    """Create a new book."""
+                category_ids: List[int] = None,
+                initial_copies: int = 0,
+                barcode_prefix: Optional[str] = None) -> Book:
+    """Create a new book with optional initial physical copies."""
     # Validate ISBN uniqueness
     if isbn:
         existing = db.query(Book).filter(Book.isbn == isbn).first()
@@ -294,6 +296,26 @@ def create_book(db: Session, title: str, isbn: Optional[str] = None,
     db.add(book)
     db.commit()
     db.refresh(book)
+
+    # Automatically generate initial physical copies if requested
+    if initial_copies and initial_copies > 0:
+        clean_prefix = barcode_prefix.strip().upper() if barcode_prefix and barcode_prefix.strip() else None
+        clean_title = "".join(ch for ch in title if ch.isalnum())[:4].upper() or "BOOK"
+        prefix = clean_prefix or f"BC-{clean_title}"
+        for c_idx in range(1, initial_copies + 1):
+            barcode = f"{prefix}-{book.id:03d}-{c_idx:02d}"
+            while db.query(BookCopy).filter(BookCopy.barcode == barcode).first():
+                barcode += "-X"
+            copy = BookCopy(
+                book_id=book.id,
+                barcode=barcode,
+                status=CopyStatus.Available,
+                condition_notes="Initial stock",
+            )
+            db.add(copy)
+        db.commit()
+        db.refresh(book)
+
     return book
 
 
@@ -802,6 +824,38 @@ def return_book(db: Session, loan_id: int, returned_to: int,
         copy_status = CopyStatus(copy_status_str)
         loan.book_copy.status = copy_status
 
+        # Assess lost book replacement fee or damaged repair fee
+        if copy_status == CopyStatus.Lost:
+            lost_fee = config.LOST_BOOK_PRICE
+            fine_amount += lost_fee
+            if not loan.fine:
+                fine = Fine(
+                    loan_id=loan.id,
+                    member_id=loan.member_id,
+                    fine_amount=lost_fee,
+                    fine_type=FineType.Lost,
+                    reason=f"Lost book replacement fee (₹{lost_fee:.2f})",
+                )
+                db.add(fine)
+            else:
+                loan.fine.fine_amount += lost_fee
+                loan.fine.reason += f"; Lost book fee ₹{lost_fee:.2f}"
+        elif copy_status == CopyStatus.Damaged:
+            damaged_fee = config.DAMAGED_BOOK_PRICE
+            fine_amount += damaged_fee
+            if not loan.fine:
+                fine = Fine(
+                    loan_id=loan.id,
+                    member_id=loan.member_id,
+                    fine_amount=damaged_fee,
+                    fine_type=FineType.Damaged,
+                    reason=f"Damaged book repair fee (₹{damaged_fee:.2f})",
+                )
+                db.add(fine)
+            else:
+                loan.fine.fine_amount += damaged_fee
+                loan.fine.reason += f"; Damaged fee ₹{damaged_fee:.2f}"
+
         if condition_notes:
             loan.book_copy.condition_notes = condition_notes
 
@@ -1286,7 +1340,7 @@ def get_report_data(db: Session) -> dict:
     category_dist = db.query(
         Category.name,
         func.count(Book.id),
-    ).join(book_categories).join(Book).filter(
+    ).join(Category.books).filter(
         Book.is_active == True
     ).group_by(Category.name).all()
 
@@ -1304,6 +1358,113 @@ def get_report_data(db: Session) -> dict:
         "returns_this_month": returns_this_month,
         "category_distribution": [{"name": c[0], "count": c[1]} for c in category_dist],
         "top_borrowed_books": [{"title": t[0], "count": t[1]} for t in top_books],
+    }
+
+
+def get_notifications(db: Session) -> dict:
+    """Retrieve real-time actionable notifications and system alerts."""
+    items = []
+
+    # 1. Overdue loans
+    overdue_loans = db.query(Loan).options(
+        joinedload(Loan.book_copy).joinedload(BookCopy.book),
+        joinedload(Loan.member),
+    ).filter(
+        Loan.is_returned == False,
+        Loan.due_date < date.today(),
+    ).order_by(Loan.due_date.asc()).limit(8).all()
+
+    for l in overdue_loans:
+        days_overdue = (date.today() - l.due_date).days
+        accrued = max(0, days_overdue - config.GRACE_PERIOD_DAYS) * config.FINE_PER_DAY
+        book_title = l.book_copy.book.title if (l.book_copy and l.book_copy.book) else "Book"
+        member_name = f"{l.member.first_name} {l.member.last_name}" if l.member else "Member"
+        items.append({
+            "id": f"overdue-{l.id}",
+            "severity": "critical",
+            "type": "overdue",
+            "title": f"Overdue: {book_title}",
+            "message": f"Borrowed by {member_name} — {days_overdue} day(s) overdue (₹{accrued:.2f} fine accrued).",
+            "target_view": "overdue-books",
+            "action_text": "Review Overdue",
+            "timestamp": l.due_date.isoformat(),
+        })
+
+    # 2. Active reservations where copies are available
+    active_reservations = db.query(Reservation).options(
+        joinedload(Reservation.book).joinedload(Book.copies),
+        joinedload(Reservation.member),
+    ).filter(
+        Reservation.status == ReservationStatus.Active
+    ).order_by(Reservation.queue_position.asc()).limit(5).all()
+
+    for r in active_reservations:
+        avail_count = sum(1 for c in r.book.copies if c.status == CopyStatus.Available) if (r.book and r.book.copies) else 0
+        if avail_count > 0:
+            member_name = f"{r.member.first_name} {r.member.last_name}" if r.member else "Member"
+            book_title = r.book.title if r.book else "Book"
+            items.append({
+                "id": f"res-{r.id}",
+                "severity": "success",
+                "type": "reservation_ready",
+                "title": f"Ready for Pickup: {book_title}",
+                "message": f"Copy available for {member_name} (Priority #{r.queue_position}).",
+                "target_view": "reservations",
+                "action_text": "Fulfill Reservation",
+                "timestamp": r.created_at.strftime("%Y-%m-%d") if r.created_at else date.today().isoformat(),
+            })
+
+    # 3. Unpaid fines
+    unpaid_fines = db.query(
+        Member.id,
+        Member.first_name,
+        Member.last_name,
+        func.sum(Fine.fine_amount - Fine.paid_amount).label("due_amount"),
+    ).join(Fine, Member.id == Fine.member_id).filter(
+        Fine.status.in_([FineStatus.Unpaid, FineStatus.Partial])
+    ).group_by(Member.id).having(func.sum(Fine.fine_amount - Fine.paid_amount) > 0).limit(5).all()
+
+    for u in unpaid_fines:
+        items.append({
+            "id": f"fine-mem-{u.id}",
+            "severity": "warning",
+            "type": "fine",
+            "title": f"Unpaid Dues: ₹{float(u.due_amount):.2f}",
+            "message": f"{u.first_name} {u.last_name} has outstanding fine balance requiring payment.",
+            "target_view": "fine-payments",
+            "action_text": "Collect Payment",
+            "timestamp": date.today().isoformat(),
+        })
+
+    # 4. Out-of-stock books (all copies on loan)
+    zero_stock_books = db.query(Book).options(
+        joinedload(Book.copies)
+    ).filter(Book.is_active == True).limit(20).all()
+
+    for b in zero_stock_books:
+        if len(b.copies) > 0 and all(c.status != CopyStatus.Available for c in b.copies):
+            items.append({
+                "id": f"stock-{b.id}",
+                "severity": "info",
+                "type": "inventory",
+                "title": f"Zero Stock: {b.title}",
+                "message": f"All {len(b.copies)} physical copy(ies) are currently on loan or reserved.",
+                "target_view": "book-copies",
+                "action_text": "View Copies",
+                "timestamp": date.today().isoformat(),
+            })
+            if len([it for it in items if it["type"] == "inventory"]) >= 3:
+                break
+
+    return {
+        "count": len(items),
+        "unread_count": len(items),
+        "notifications": items,
+        "summary": {
+            "overdue_count": len(overdue_loans),
+            "reservations_ready": len([i for i in items if i["type"] == "reservation_ready"]),
+            "unpaid_fines_count": len(unpaid_fines),
+        }
     }
 
 
