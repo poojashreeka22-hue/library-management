@@ -224,6 +224,204 @@ async function handleLoginSubmit(e) {
 }
 
 // ==========================================================================
+// Notifications & Alerts System
+// ==========================================================================
+
+const notificationState = {
+  items: [],
+  unreadCount: 0,
+  isDropdownOpen: false,
+  isBannerDismissed: false,
+};
+
+async function fetchNotifications() {
+  try {
+    const res = await apiFetch("/api/dashboard/notifications");
+    if (!res.ok) return;
+    const data = await res.json();
+    notificationState.items = data.notifications || [];
+    notificationState.unreadCount = data.unread_count || 0;
+
+    // Update header badge
+    const badge = document.getElementById("notification-badge");
+    const countBadge = document.getElementById("notification-dropdown-count");
+    if (badge) {
+      if (notificationState.unreadCount > 0) {
+        badge.innerText = notificationState.unreadCount;
+        badge.style.display = "flex";
+      } else {
+        badge.style.display = "none";
+      }
+    }
+    if (countBadge) {
+      countBadge.innerText = `${notificationState.unreadCount} New`;
+    }
+
+    // Render dropdown list if open or on update
+    renderNotificationItems();
+
+    // Render Home Menu notification bar
+    renderHomeNotificationBar(data.summary);
+  } catch (err) {
+    console.error("Notifications fetch error:", err);
+  }
+}
+
+function renderHomeNotificationBar(summary) {
+  const bar = document.getElementById("home-notification-bar");
+  const msgEl = document.getElementById("home-notification-text");
+  const actionBtn = document.getElementById("home-notification-action-btn");
+  if (!bar || !msgEl || !actionBtn) return;
+
+  if (notificationState.isBannerDismissed) {
+    bar.style.display = "none";
+    return;
+  }
+
+  const overdueCount = summary?.overdue_count || 0;
+  const resReadyCount = summary?.reservations_ready || 0;
+  const unpaidCount = summary?.unpaid_fines_count || 0;
+
+  if (overdueCount > 0) {
+    msgEl.innerText = `${overdueCount} book loan(s) are currently overdue and requiring immediate return or renewal.`;
+    actionBtn.innerText = "Review Overdue";
+    actionBtn.onclick = () => switchView("overdue-books");
+    bar.style.display = "flex";
+  } else if (resReadyCount > 0) {
+    msgEl.innerText = `${resReadyCount} reserved book(s) have physical copies available and waiting for member pickup.`;
+    actionBtn.innerText = "Fulfill Reservations";
+    actionBtn.onclick = () => switchView("reservations");
+    bar.style.display = "flex";
+  } else if (unpaidCount > 0) {
+    msgEl.innerText = `${unpaidCount} member(s) have outstanding fine balances requiring settlement.`;
+    actionBtn.innerText = "Collect Fines";
+    actionBtn.onclick = () => switchView("fine-payments");
+    bar.style.display = "flex";
+  } else {
+    bar.style.display = "none";
+  }
+}
+
+function dismissHomeNotificationBar(e) {
+  if (e) e.stopPropagation();
+  notificationState.isBannerDismissed = true;
+  const bar = document.getElementById("home-notification-bar");
+  if (bar) bar.style.display = "none";
+}
+
+function toggleNotificationDropdown(e) {
+  if (e) e.stopPropagation();
+  const dropdown = document.getElementById("notification-dropdown");
+  if (!dropdown) return;
+
+  notificationState.isDropdownOpen = !notificationState.isDropdownOpen;
+  dropdown.style.display = notificationState.isDropdownOpen ? "block" : "none";
+
+  if (notificationState.isDropdownOpen) {
+    renderNotificationItems();
+  }
+}
+
+function renderNotificationItems() {
+  const container = document.getElementById("notification-items-container");
+  if (!container) return;
+
+  const items = notificationState.items;
+  if (!items || items.length === 0) {
+    container.innerHTML = `
+      <div class="notification-empty">
+        <svg style="width:36px;height:36px;color:#cbd5e1;margin-bottom:8px;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+        </svg>
+        <p style="margin:0;font-weight:500;">All caught up!</p>
+        <p style="margin:4px 0 0;font-size:0.75rem;color:#94a3b8;">No pending alerts or notifications.</p>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = items.map(it => {
+    let iconSvg = '';
+    if (it.severity === 'critical') {
+      iconSvg = `<svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>`;
+    } else if (it.severity === 'success') {
+      iconSvg = `<svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>`;
+    } else if (it.severity === 'warning') {
+      iconSvg = `<svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>`;
+    } else {
+      iconSvg = `<svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>`;
+    }
+
+    return `
+      <div class="notification-item" onclick="handleNotificationClick('${it.id}', '${it.target_view}')">
+        <div class="notification-icon-circle ${it.severity}">
+          ${iconSvg}
+        </div>
+        <div class="notification-content">
+          <div class="notification-title">${it.title}</div>
+          <div class="notification-msg">${it.message}</div>
+          <div class="notification-action-hint">
+            ${it.action_text || 'View details'} &rarr;
+          </div>
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+
+function handleNotificationClick(itemId, targetView) {
+  const dropdown = document.getElementById("notification-dropdown");
+  if (dropdown) dropdown.style.display = "none";
+  notificationState.isDropdownOpen = false;
+
+  // Filter out this clicked item
+  notificationState.items = notificationState.items.filter(i => i.id !== itemId);
+  notificationState.unreadCount = Math.max(0, notificationState.unreadCount - 1);
+
+  const badge = document.getElementById("notification-badge");
+  const countBadge = document.getElementById("notification-dropdown-count");
+  if (badge) {
+    if (notificationState.unreadCount > 0) {
+      badge.innerText = notificationState.unreadCount;
+      badge.style.display = "flex";
+    } else {
+      badge.style.display = "none";
+    }
+  }
+  if (countBadge) countBadge.innerText = `${notificationState.unreadCount} New`;
+
+  if (targetView) {
+    switchView(targetView);
+  }
+}
+
+function clearNotifications(e) {
+  if (e) e.stopPropagation();
+  notificationState.items = [];
+  notificationState.unreadCount = 0;
+
+  const badge = document.getElementById("notification-badge");
+  const countBadge = document.getElementById("notification-dropdown-count");
+  if (badge) badge.style.display = "none";
+  if (countBadge) countBadge.innerText = "0 New";
+
+  renderNotificationItems();
+  showToast("All notifications dismissed");
+}
+
+// Close dropdown on outside click
+document.addEventListener("click", (e) => {
+  const dropdown = document.getElementById("notification-dropdown");
+  const btn = document.getElementById("notification-btn");
+  if (dropdown && notificationState.isDropdownOpen) {
+    if (!dropdown.contains(e.target) && !btn?.contains(e.target)) {
+      dropdown.style.display = "none";
+      notificationState.isDropdownOpen = false;
+    }
+  }
+});
+
+// ==========================================================================
 // API Calls & Data Fetching
 // ==========================================================================
 
@@ -233,6 +431,7 @@ async function fetchDashboard() {
     if (!res.ok) throw new Error("Failed to load dashboard data");
     const data = await res.json();
     renderDashboard(data);
+    await fetchNotifications();
   } catch (err) {
     console.error("Dashboard error:", err);
   }
@@ -1183,36 +1382,140 @@ function renderRolesPermissions(container) {
 
 // 14. Reports & Analytics View
 async function renderReportsAnalytics(container) {
-  const res = await apiFetch("/api/dashboard/reports");
-  const rep = await res.json();
-  container.innerHTML = `
-    <div class="page-banner">
-      <div>
-        <h2 class="page-title">Reports & Analytics</h2>
-        <p class="page-subtitle">Real-time statistics and borrowing metrics.</p>
+  try {
+    const res = await apiFetch("/api/dashboard/reports");
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || "Failed to load reports. Make sure you are signed in as a librarian or admin.");
+    }
+    const rep = await res.json();
+
+    const totalTitles = rep.category_distribution.reduce((acc, c) => acc + c.count, 0) || 1;
+
+    container.innerHTML = `
+      <div class="page-banner">
+        <div>
+          <h2 class="page-title">Reports & Analytics</h2>
+          <p class="page-subtitle">Circulation metrics, financial collection, category distribution, and borrowing trends.</p>
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="renderReportsAnalytics(document.getElementById('dynamic-content'))">
+          🔄 Refresh Analytics
+        </button>
       </div>
-    </div>
-    <div class="dashboard-grid">
-      <div class="grid-card">
-        <h3 class="card-title">Circulation Summary</h3>
-        <p style="margin-top:14px;color:#64748b;">Loans Issued This Month: <strong>${rep.loans_this_month}</strong></p>
-        <p style="margin-top:8px;color:#64748b;">Returns Processed: <strong>${rep.returns_this_month}</strong></p>
-        <p style="margin-top:8px;color:#64748b;">Total Fines Collected: <strong>₹${rep.total_fines_collected.toFixed(2)}</strong></p>
-        <p style="margin-top:8px;color:#64748b;">Outstanding Fine Balance: <strong>₹${rep.outstanding_fines.toFixed(2)}</strong></p>
+
+      <!-- Key Performance Metrics Grid -->
+      <div class="stats-grid" style="margin-bottom:24px;">
+        <div class="stat-card">
+          <div class="stat-icon-wrapper blue">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+          </div>
+          <div class="stat-content">
+            <span class="stat-label">Loans This Month</span>
+            <span class="stat-value">${rep.loans_this_month}</span>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon-wrapper green">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          </div>
+          <div class="stat-content">
+            <span class="stat-label">Returns Processed</span>
+            <span class="stat-value">${rep.returns_this_month}</span>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon-wrapper orange">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          </div>
+          <div class="stat-content">
+            <span class="stat-label">Fines Collected</span>
+            <span class="stat-value">₹${rep.total_fines_collected.toFixed(2)}</span>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon-wrapper red">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+          </div>
+          <div class="stat-content">
+            <span class="stat-label">Outstanding Dues</span>
+            <span class="stat-value text-danger">₹${rep.outstanding_fines.toFixed(2)}</span>
+          </div>
+        </div>
       </div>
-      <div class="grid-card">
-        <h3 class="card-title">Category Distribution</h3>
-        <ul style="margin-top:14px;list-style:none;padding:0;">
-          ${rep.category_distribution.map(c => `
-            <li style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f1f5f9;">
-              <span>${c.name}</span>
-              <strong>${c.count} titles</strong>
-            </li>
-          `).join('')}
-        </ul>
+
+      <!-- Analytics Charts & Distributions -->
+      <div class="dashboard-grid">
+        <!-- Category Distribution with Visual Progress Bars -->
+        <div class="grid-card">
+          <div class="card-header">
+            <h3 class="card-title">Catalog by Category</h3>
+            <span class="badge blue">${rep.category_distribution.length} Categories</span>
+          </div>
+          <div style="margin-top:16px;display:flex;flex-direction:column;gap:14px;">
+            ${rep.category_distribution.length === 0 ? '<div style="color:#94a3b8;padding:16px;text-align:center;">No category records</div>' :
+              rep.category_distribution.map(c => {
+                const pct = Math.round((c.count / totalTitles) * 100);
+                return `
+                  <div>
+                    <div style="display:flex;justify-content:space-between;font-size:0.84rem;margin-bottom:5px;">
+                      <span style="font-weight:600;color:#334155;">${c.name}</span>
+                      <span style="color:#64748b;">${c.count} titles (${pct}%)</span>
+                    </div>
+                    <div style="width:100%;height:8px;background:#e2e8f0;border-radius:9999px;overflow:hidden;">
+                      <div style="width:${pct}%;height:100%;background:linear-gradient(90deg, #3b82f6, #2563eb);border-radius:9999px;"></div>
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+          </div>
+        </div>
+
+        <!-- Top Borrowed Books Leaderboard -->
+        <div class="grid-card">
+          <div class="card-header">
+            <h3 class="card-title">Top Borrowed Books</h3>
+            <span class="badge green">Popular Titles</span>
+          </div>
+          <div class="table-wrapper" style="margin-top:12px;">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th style="width:40px;">#</th>
+                  <th>Title</th>
+                  <th>Circulation Count</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${rep.top_borrowed_books.length === 0 ? '<tr><td colspan="3" style="text-align:center;padding:16px;color:#94a3b8;">No loan records yet</td></tr>' :
+                  rep.top_borrowed_books.map((b, idx) => `
+                    <tr>
+                      <td><span class="badge ${idx === 0 ? 'orange' : 'gray'}" style="width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;padding:0;">${idx + 1}</span></td>
+                      <td><strong>${b.title}</strong></td>
+                      <td><span class="badge blue">${b.count} borrows</span></td>
+                    </tr>
+                  `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
-    </div>
-  `;
+    `;
+  } catch (err) {
+    container.innerHTML = `
+      <div class="page-banner">
+        <div>
+          <h2 class="page-title">Reports & Analytics</h2>
+          <p class="page-subtitle">Real-time statistics and borrowing metrics.</p>
+        </div>
+      </div>
+      <div class="form-alert error" style="margin:20px;">
+        ${err.message}
+      </div>
+    `;
+  }
 }
 
 // 15. Audit Logs View
@@ -1263,62 +1566,120 @@ async function renderAuditLogs(container) {
 async function renderSystemSettings(container) {
   const res = await apiFetch("/api/dashboard/settings");
   const settings = await res.json();
+
   container.innerHTML = `
     <div class="page-banner">
       <div>
-        <h2 class="page-title">System Settings</h2>
-        <p class="page-subtitle">Circulation rules, fine parameters, and loan durations.</p>
+        <h2 class="page-title">System Settings & Pricing Configuration</h2>
+        <p class="page-subtitle">Configure overdue dues prices, lost book replacement costs, and circulation policies.</p>
       </div>
     </div>
-    <div class="grid-card" style="max-width:680px;">
-      <form onsubmit="handleUpdateSettings(event)">
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">Default Loan Duration (Days)</label>
-            <input type="number" name="default_loan_days" class="form-control" value="${settings.default_loan_days}" required>
+
+    <form onsubmit="handleUpdateSettings(event)" style="max-width:960px;">
+      <div class="dashboard-grid">
+        <!-- Card 1: Dues & Pricing Rules -->
+        <div class="grid-card">
+          <div class="card-header">
+            <h3 class="card-title">💰 Dues Prices & Loss Replacement Fees</h3>
           </div>
-          <div class="form-group">
-            <label class="form-label">Daily Overdue Fine (₹/Day)</label>
-            <input type="number" step="0.5" name="fine_per_day" class="form-control" value="${settings.fine_per_day}" required>
+          <div style="display:flex;flex-direction:column;gap:14px;margin-top:14px;">
+            <div class="form-group">
+              <label class="form-label">Daily Overdue Dues Price (₹ / Day) <span class="req">*</span></label>
+              <input type="number" step="0.5" min="0" name="fine_per_day" class="form-control" value="${settings.fine_per_day || 10.0}" required>
+              <span class="form-hint">Daily charge assessed when a member returns a book past due date.</span>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Lost Book Replacement Price (₹) <span class="req">*</span></label>
+              <input type="number" step="10" min="0" name="lost_book_price" class="form-control" value="${settings.lost_book_price || 250.0}" required>
+              <span class="form-hint">Standard charge assessed when a borrowed book copy is reported lost.</span>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Damaged Book Repair Fee (₹) <span class="req">*</span></label>
+              <input type="number" step="5" min="0" name="damaged_book_price" class="form-control" value="${settings.damaged_book_price || 100.0}" required>
+              <span class="form-hint">Fee assessed for severe wear, missing pages, or liquid damage.</span>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Max Outstanding Dues Limit (₹) <span class="req">*</span></label>
+              <input type="number" step="10" min="0" name="max_unpaid_fine_limit" class="form-control" value="${settings.max_unpaid_fine_limit || 100.0}" required>
+              <span class="form-hint">Borrowing is locked if member's unpaid fine exceeds this threshold.</span>
+            </div>
           </div>
         </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">Grace Period (Days)</label>
-            <input type="number" name="grace_period_days" class="form-control" value="${settings.grace_period_days}" required>
+
+        <!-- Card 2: Circulation Policies -->
+        <div class="grid-card">
+          <div class="card-header">
+            <h3 class="card-title">📚 Circulation Rules & Durations</h3>
           </div>
-          <div class="form-group">
-            <label class="form-label">Max Renewals Allowed</label>
-            <input type="number" name="max_renewals" class="form-control" value="${settings.max_renewals}" required>
+          <div style="display:flex;flex-direction:column;gap:14px;margin-top:14px;">
+            <div class="form-group">
+              <label class="form-label">Standard Loan Duration (Days) <span class="req">*</span></label>
+              <input type="number" min="1" max="90" name="default_loan_days" class="form-control" value="${settings.default_loan_days || 14}" required>
+              <span class="form-hint">Default time a member can keep an issued book.</span>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Overdue Grace Period (Days) <span class="req">*</span></label>
+              <input type="number" min="0" max="14" name="grace_period_days" class="form-control" value="${settings.grace_period_days || 1}" required>
+              <span class="form-hint">Days after due date before daily overdue charges start accruing.</span>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Max Allowed Renewals per Loan <span class="req">*</span></label>
+              <input type="number" min="0" max="10" name="max_renewals" class="form-control" value="${settings.max_renewals || 2}" required>
+              <span class="form-hint">Maximum number of times an active loan can be extended.</span>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Renewal Extension Duration (Days) <span class="req">*</span></label>
+              <input type="number" min="1" max="60" name="renewal_days" class="form-control" value="${settings.renewal_days || 14}" required>
+              <span class="form-hint">Days added to due date when a loan renewal is approved.</span>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Reservation Expiry Window (Days) <span class="req">*</span></label>
+              <input type="number" min="1" max="30" name="reservation_expiry_days" class="form-control" value="${settings.reservation_expiry_days || 3}" required>
+              <span class="form-hint">Days an available reserved copy is held before queue auto-cancels.</span>
+            </div>
           </div>
         </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">Reservation Expiry (Days)</label>
-            <input type="number" name="reservation_expiry_days" class="form-control" value="${settings.reservation_expiry_days}" required>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Max Unpaid Fine Limit (₹)</label>
-            <input type="number" step="10" name="max_unpaid_fine_limit" class="form-control" value="${settings.max_unpaid_fine_limit}" required>
-          </div>
-        </div>
-        <button type="submit" class="btn btn-primary" style="margin-top:12px;">Save Settings</button>
-      </form>
-    </div>
+      </div>
+
+      <div style="margin-top:20px;display:flex;align-items:center;gap:14px;">
+        <button type="submit" id="btn-save-settings" class="btn btn-primary" style="padding:11px 24px;">
+          💾 Save Dues Prices & Settings
+        </button>
+        <span id="settings-save-status" style="font-size:0.85rem;color:#166534;font-weight:600;display:none;">
+          ✓ Settings updated successfully
+        </span>
+      </div>
+    </form>
   `;
 }
 
 async function handleUpdateSettings(e) {
   e.preventDefault();
   const form = e.target;
+  const btn = document.getElementById("btn-save-settings");
+  const statusEl = document.getElementById("settings-save-status");
+
   const payload = {
-    default_loan_days: parseInt(form.default_loan_days.value),
     fine_per_day: parseFloat(form.fine_per_day.value),
+    lost_book_price: parseFloat(form.lost_book_price.value),
+    damaged_book_price: parseFloat(form.damaged_book_price.value),
+    max_unpaid_fine_limit: parseFloat(form.max_unpaid_fine_limit.value),
+    default_loan_days: parseInt(form.default_loan_days.value),
     grace_period_days: parseInt(form.grace_period_days.value),
     max_renewals: parseInt(form.max_renewals.value),
+    renewal_days: parseInt(form.renewal_days.value),
     reservation_expiry_days: parseInt(form.reservation_expiry_days.value),
-    max_unpaid_fine_limit: parseFloat(form.max_unpaid_fine_limit.value),
   };
+
+  btn.disabled = true;
+  btn.innerText = "Saving Prices & Settings...";
 
   try {
     const res = await apiFetch("/api/dashboard/settings", {
@@ -1330,9 +1691,16 @@ async function handleUpdateSettings(e) {
       const err = await res.json();
       throw new Error(err.detail || "Failed to update settings");
     }
-    showToast("Settings updated successfully!");
+    showToast("Dues prices and circulation settings updated successfully!");
+    if (statusEl) {
+      statusEl.style.display = "inline";
+      setTimeout(() => statusEl.style.display = "none", 3000);
+    }
   } catch (err) {
     showToast(err.message, "error");
+  } finally {
+    btn.disabled = false;
+    btn.innerText = "💾 Save Dues Prices & Settings";
   }
 }
 
@@ -1827,6 +2195,11 @@ async function handleAddBook(e) {
   // Find primary cover image if uploaded
   const primaryCover = bookFormState.uploadedFiles.find(f => f.url.match(/\.(jpeg|jpg|gif|png|webp)$/i));
 
+  const copiesInput = document.getElementById("add-book-copies");
+  const prefixInput = document.getElementById("add-book-barcode-prefix");
+  const initialCopies = copiesInput ? Math.max(1, parseInt(copiesInput.value) || 1) : 1;
+  const barcodePrefix = prefixInput ? prefixInput.value.trim() || null : null;
+
   const payload = {
     title: title,
     isbn: cleanIsbn || null,
@@ -1836,6 +2209,8 @@ async function handleAddBook(e) {
     cover_image: primaryCover ? primaryCover.url : null,
     author_ids: authorIds,
     category_ids: categoryIds,
+    initial_copies: initialCopies,
+    barcode_prefix: barcodePrefix,
   };
 
   // 7. Submit to Backend

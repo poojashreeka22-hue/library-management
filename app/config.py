@@ -38,6 +38,8 @@ GRACE_PERIOD_DAYS = int(os.getenv("GRACE_PERIOD_DAYS", "1"))
 RESERVATION_EXPIRY_DAYS = int(os.getenv("RESERVATION_EXPIRY_DAYS", "3"))
 MAX_ACTIVE_RESERVATIONS = int(os.getenv("MAX_ACTIVE_RESERVATIONS", "3"))
 MAX_UNPAID_FINE_LIMIT = float(os.getenv("MAX_UNPAID_FINE_LIMIT", "100.0"))
+LOST_BOOK_PRICE = float(os.getenv("LOST_BOOK_PRICE", "250.0"))
+DAMAGED_BOOK_PRICE = float(os.getenv("DAMAGED_BOOK_PRICE", "100.0"))
 
 # ---------------------------------------------------------------------------
 # Database

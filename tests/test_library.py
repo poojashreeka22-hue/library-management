@@ -605,3 +605,122 @@ def test_batch_delete_books(test_client, admin_headers):
     assert "2" in res.json()["message"]
 
 
+def test_create_book_with_initial_copies(test_client, admin_headers):
+    """Test creating a book with initial_copies automatically generates physical copies."""
+    payload = {
+        "title": "Designing Data-Intensive Applications",
+        "isbn": "9781449373320",
+        "publisher": "O'Reilly Media",
+        "published_year": 2017,
+        "initial_copies": 3,
+        "barcode_prefix": "BC-DDIA",
+    }
+    res = test_client.post("/api/books", json=payload, headers=admin_headers)
+    assert res.status_code == status.HTTP_201_CREATED
+    data = res.json()
+    assert data["total_copies"] == 3
+    assert data["available_copies"] == 3
+
+    # Verify physical copies exist in inventory
+    copies_res = test_client.get(f"/api/copies?book_id={data['id']}")
+    assert copies_res.status_code == status.HTTP_200_OK
+    copies = copies_res.json()
+    assert len(copies) == 3
+    assert all("BC-DDIA" in c["barcode"] for c in copies)
+
+
+def test_reports_analytics_api_endpoint(test_client, admin_headers):
+    """Test reports & analytics endpoint returns valid JSON without 500 error."""
+    # Seed a category and book
+    cat_res = test_client.post("/api/categories", json={"name": "Analytics Category"}, headers=admin_headers).json()
+    b_res = test_client.post("/api/books", json={"title": "Analytics Book", "category_ids": [cat_res["id"]]}, headers=admin_headers).json()
+
+    res = test_client.get("/api/dashboard/reports")
+    assert res.status_code == status.HTTP_200_OK
+    data = res.json()
+    assert "category_distribution" in data
+    assert "top_borrowed_books" in data
+    assert "active_loans" in data
+    assert "total_fines_collected" in data
+    assert isinstance(data["category_distribution"], list)
+
+
+def test_system_settings_dues_and_lost_prices(test_client, admin_headers):
+    """Test updating dues prices (fine_per_day) and lost prices via system settings."""
+    # 1. Fetch current settings
+    get_res = test_client.get("/api/dashboard/settings", headers=admin_headers)
+    assert get_res.status_code == status.HTTP_200_OK
+    settings = get_res.json()
+    assert "fine_per_day" in settings
+    assert "lost_book_price" in settings
+    assert "damaged_book_price" in settings
+
+    # 2. Update fine_per_day and lost_book_price
+    update_res = test_client.put(
+        "/api/dashboard/settings",
+        json={"fine_per_day": 15.0, "lost_book_price": 500.0, "damaged_book_price": 150.0},
+        headers=admin_headers
+    )
+    assert update_res.status_code == status.HTTP_200_OK
+    updated = update_res.json()
+    assert updated["fine_per_day"] == 15.0
+    assert updated["lost_book_price"] == 500.0
+    assert updated["damaged_book_price"] == 150.0
+
+
+def test_return_book_lost_assesses_configured_lost_price(test_client, admin_headers):
+    """Test returning a copy marked as Lost charges the configured lost_book_price."""
+    # Configure lost price
+    test_client.put("/api/dashboard/settings", json={"lost_book_price": 450.0}, headers=admin_headers)
+
+    # Setup book, copy, and member
+    b_res = test_client.post("/api/books", json={"title": "Lost Novel"}, headers=admin_headers).json()
+    c_res = test_client.post("/api/copies", json={"book_id": b_res["id"], "barcode": "BC-LOST-01"}, headers=admin_headers).json()
+    m_res = test_client.post("/api/members", json={"first_name": "Lost", "last_name": "Reader", "email": "lost.reader@test.com"}, headers=admin_headers).json()
+
+    # Issue book
+    issue_res = test_client.post("/api/loans/issue", json={"member_id": m_res["id"], "book_copy_id": c_res["id"]}, headers=admin_headers).json()
+    loan_id = issue_res["id"]
+
+    # Return book as Lost
+    return_res = test_client.post(
+        "/api/loans/return",
+        json={"loan_id": loan_id, "copy_status": "Lost", "condition_notes": "Lost while traveling"},
+        headers=admin_headers
+    )
+    assert return_res.status_code == status.HTTP_200_OK
+    data = return_res.json()
+    assert data["fine_amount"] >= 450.0
+
+
+def test_dashboard_notifications_endpoint(test_client, admin_headers):
+    """Test dashboard notifications endpoint returns alerts and summary."""
+    # 1. Check endpoint baseline
+    res = test_client.get("/api/dashboard/notifications")
+    assert res.status_code == status.HTTP_200_OK
+    data = res.json()
+    assert "count" in data
+    assert "unread_count" in data
+    assert "notifications" in data
+    assert "summary" in data
+
+    # 2. Create overdue loan to test alert trigger
+    b_res = test_client.post("/api/books", json={"title": "Notif Book"}, headers=admin_headers).json()
+    c_res = test_client.post("/api/copies", json={"book_id": b_res["id"], "barcode": "BC-NOTIF-01"}, headers=admin_headers).json()
+    m_res = test_client.post("/api/members", json={"first_name": "Notif", "last_name": "User", "email": "notif@test.com"}, headers=admin_headers).json()
+
+    past_date = (date.today() - timedelta(days=5)).isoformat()
+    issue_res = test_client.post("/api/loans/issue", json={"member_id": m_res["id"], "book_copy_id": c_res["id"], "due_date": past_date}, headers=admin_headers)
+    assert issue_res.status_code == status.HTTP_201_CREATED
+
+    # 3. Check notifications has the overdue alert
+    res2 = test_client.get("/api/dashboard/notifications")
+    assert res2.status_code == status.HTTP_200_OK
+    data2 = res2.json()
+    assert data2["count"] >= 1
+    assert data2["summary"]["overdue_count"] >= 1
+    assert any(n["target_view"] == "overdue-books" for n in data2["notifications"])
+
+
+
+

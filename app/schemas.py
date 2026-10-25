@@ -235,6 +235,8 @@ class BookCreate(BaseModel):
     cover_image: Optional[str] = Field(None, max_length=500)
     author_ids: List[int] = Field(default_factory=list)
     category_ids: List[int] = Field(default_factory=list)
+    initial_copies: Optional[int] = Field(default=0, ge=0, le=100)
+    barcode_prefix: Optional[str] = Field(None, max_length=20)
 
     @field_validator("isbn")
     @classmethod
